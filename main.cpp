@@ -14,7 +14,10 @@ using namespace std;
 class Edge
 {
 public:
+  // private:
   int src, dest, weight;
+
+  // friend class Graph;
 };
 
 // a structure to represent a connected,
@@ -33,13 +36,32 @@ public:
 };
 
 // Creates a graph with V vertices and E edges
-Graph *createGraph(int V, int E)
+Graph *createGraph(const string location_file)
 {
+  ifstream file;
+  int node_init{0}, V, E;
+  file.open(location_file);
+  file >> V;
+  file >> E;
+  file >> node_init;
+  cout << "Numero total de nodos: " << V << endl;
+  cout << "Numero total de aristas: " << E << endl;
+  cout << "Nodo inicial: " << node_init << endl;
+
   Graph *graph = new Graph;
   graph->V = V;
   graph->E = E;
 
   graph->edge = new Edge[E];
+
+  for (size_t i = 0; i < E; i++)
+  {
+    file >> graph->edge[i].src;
+    file >> graph->edge[i].dest;
+    file >> graph->edge[i].weight;
+  }
+
+  file.close();
 
   return graph;
 }
@@ -170,34 +192,34 @@ int main()
 		| \ |
 		2--------3
 			4 */
-  int V = 4; // Number of vertices in graph
-  int E = 5; // Number of edges in graph
-  Graph *graph = createGraph(V, E);
+  // int V = 4; // Number of vertices in graph
+  // int E = 5; // Number of edges in graph
+  Graph *graph = createGraph("./entrada.txt");
 
-  // add edge 0-1
-  graph->edge[0].src = 0;
-  graph->edge[0].dest = 1;
-  graph->edge[0].weight = 10;
+  // // add edge 0-1
+  // graph->edge[0].src = 0;
+  // graph->edge[0].dest = 1;
+  // graph->edge[0].weight = 10;
 
-  // add edge 0-2
-  graph->edge[1].src = 0;
-  graph->edge[1].dest = 2;
-  graph->edge[1].weight = 6;
+  // // add edge 0-2
+  // graph->edge[1].src = 0;
+  // graph->edge[1].dest = 2;
+  // graph->edge[1].weight = 6;
 
-  // add edge 0-3
-  graph->edge[2].src = 0;
-  graph->edge[2].dest = 3;
-  graph->edge[2].weight = 5;
+  // // add edge 0-3
+  // graph->edge[2].src = 0;
+  // graph->edge[2].dest = 3;
+  // graph->edge[2].weight = 5;
 
-  // add edge 1-3
-  graph->edge[3].src = 1;
-  graph->edge[3].dest = 3;
-  graph->edge[3].weight = 15;
+  // // add edge 1-3
+  // graph->edge[3].src = 1;
+  // graph->edge[3].dest = 3;
+  // graph->edge[3].weight = 15;
 
-  // add edge 2-3
-  graph->edge[4].src = 2;
-  graph->edge[4].dest = 3;
-  graph->edge[4].weight = 4;
+  // // add edge 2-3
+  // graph->edge[4].src = 2;
+  // graph->edge[4].dest = 3;
+  // graph->edge[4].weight = 4;
 
   // Function call
   KruskalMST(graph);
@@ -229,18 +251,3 @@ void readFile(const string location_file)
   file.close();
   system("dot -Tpng ./graph.dot -o graph.png");
 };
-
-int main()
-{
-  // Se trabaja con el caso base
-  // int V = 4;
-
-  // Graph grafo;
-  // grafo.generateAdj(V);
-  // grafo.printAdj();
-  // grafo.createGraph(grafo);
-  // kruskall(grafo);
-  readFile("nodes.txt");
-
-  return 0;
-}
