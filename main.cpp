@@ -2,293 +2,210 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
+// C++ program for Kruskal's algorithm
+// to find Minimum Spanning Tree of a
+// given connected, undirected and weighted
+// graph
+#include <bits/stdc++.h>
+using namespace std;
 
-// una estructura respresenta un
-// peso de una arista en un grafo
-// Arista
-// class Edge
-// {
-// public:
-//   int src, dest, weight;
-// };
+// a structure to represent a
+// weighted edge in graph
+class Edge
+{
+public:
+  int src, dest, weight;
+};
 
-// class Graph
-// {
-// private:
-//   void aletory();
+// a structure to represent a connected,
+// undirected and weighted graph
+class Graph
+{
+public:
+  // V-> Number of vertices, E-> Number of edges
+  int V, E;
 
-// public:
-//   int V, E;
+  // graph is represented as an array of edges.
+  // Since the graph is undirected, the edge
+  // from src to dest is also edge from dest
+  // to src. Both are counted as 1 edge here.
+  Edge *edge;
+};
 
-//   ~Graph();
-//   void generateAdj(int); // Generar matriz de adjecencia
-//   void printAdj();       //Imprimir matriz
-//   void printDot();       //Generar un archivo .dot
-//   void createGraph(Graph &);
-//   // graph representa una arreglo de aristas.
-//   Edge *edge;
-// };
+// Creates a graph with V vertices and E edges
+Graph *createGraph(int V, int E)
+{
+  Graph *graph = new Graph;
+  graph->V = V;
+  graph->E = E;
 
-// // void Graph::generateAdj(int v)
-// // {
-// //   V = v;
-// //   matriz = new int *[V];
-// //   for (int i = 0; i < V; i++)
-// //     matriz[i] = new int[V];
+  graph->edge = new Edge[E];
 
-// //   ifstream file;
-// //   ofstream vertex;
-// //   vertex.open("vertex.dot");
-// //   file.open("./matriz.txt");
-// //   vertex << "graph A {" << endl;
-// //   for (int i = 0; i < V; i++)
-// //   {
-// //     vertex << "\t" << i << ";" << endl;
-// //     for (size_t j = 0; j < V; j++)
-// //     {
-// //       file >> matriz[i][j];
+  return graph;
+}
 
-// //       // cout << matriz[i][j];
-// //       // if (rand() % 2 == 1)
-// //       // {
-// //       //   matriz[i][j] = 1;
-// //       //   matriz[j][i] = 1;
-// //       // }
-// //       // else
-// //       // {
-// //       //   matriz[i][j] = 0;
-// //       //   matriz[j][i] = 0;
-// //       // }
-// //     }
-// //     // matriz[i][i] = 0;
-// //   }
-// //   vertex << "}";
-// //   vertex.close();
-// //   file.close();
-// //   system("dot -Tpng ./vertex.dot -o vertex.png");
-// //   this->aletory();
-// // }
+// A structure to represent a subset for union-find
+class subset
+{
+public:
+  int parent;
+  int rank;
+};
 
-// void Graph::printAdj()
-// {
+// A utility function to find set of an element i
+// (uses path compression technique)
+int find(subset subsets[], int i)
+{
+  // find root and make root as parent of i
+  // (path compression)
+  if (subsets[i].parent != i)
+    subsets[i].parent = find(subsets, subsets[i].parent);
 
-//   cout << "  ";
-//   for (int i = 0; i < V; i++)
-//     cout << i + 1 << " ";
-//   cout << endl;
-//   for (int i = 0; i < V; i++)
-//   {
-//     cout << i + 1 << " ";
-//     for (size_t j = 0; j < V; j++)
-//       cout << matriz[i][j] << " ";
-//     cout << endl;
-//   }
-// }
+  return subsets[i].parent;
+}
 
-// // Crear un grafo con V vertices and E aristas
-// void Graph::createGraph(Graph &graph)
-// {
-//   // Contamos el numero total de enlaces
-//   int edge{0};
-//   for (size_t i = 0; i < V; i++)
-//   {
-//     for (size_t j = 0; j < V; j++)
-//     {
-//       if (matriz[i][j])
-//         edge++;
-//     }
-//   }
-//   graph.E = edge;
-//   graph.edge = new Edge[E];
-//   srand(time(NULL)); // para generar numeros aleatorios
+// A function that does union of two sets of x and y
+// (uses union by rank)
+void Union(subset subsets[], int x, int y)
+{
+  int xroot = find(subsets, x);
+  int yroot = find(subsets, y);
 
-//   ofstream file;
-//   file.open("tree.dot");
-//   file << "graph A {" << endl;
+  // Attach smaller rank tree under root of high
+  // rank tree (Union by Rank)
+  if (subsets[xroot].rank < subsets[yroot].rank)
+    subsets[xroot].parent = yroot;
+  else if (subsets[xroot].rank > subsets[yroot].rank)
+    subsets[yroot].parent = xroot;
 
-//   for (size_t i = 0; i < V; i++)
-//   {
-//     for (size_t j = i; j < V; j++)
-//     {
-//       if (matriz[i][j])
-//       {
+  // If ranks are same, then make one as root and
+  // increment its rank by one
+  else
+  {
+    subsets[yroot].parent = xroot;
+    subsets[xroot].rank++;
+  }
+}
 
-//         graph.edge[i].src = i;
-//         graph.edge[i].dest = j;
-//         graph.edge[i].weight = 1 + rand() % 10; // generamos pesos aleatorios de 10
-//         file << "\t" << i << " --" << j << " [label = \"" << graph.edge[i].weight << "\" ];" << endl;
-//       }
-//     }
-//   }
-//   file << "}";
-//   file.close();
-//   system("dot -Tpng ./tree.dot -o tree.png");
-// }
+// Compare two edges according to their weights.
+// Used in qsort() for sorting an array of edges
+int myComp(const void *a, const void *b)
+{
+  Edge *a1 = (Edge *)a;
+  Edge *b1 = (Edge *)b;
+  return a1->weight > b1->weight;
+}
 
-// void Graph::aletory()
-// {
-//   int account{0};
-//   for (size_t i = 0; i < V; i++)
-//   {
-//     for (size_t j = i; j < V; j++)
-//     {
-//       (matriz[i][j] == 0)
-//           ? account += 1
-//           : account;
-//     }
-//   }
-//   account -= V;
-//   srand(time(NULL));
-//   int limit = rand() % 2 + 1;
-//   cout << "La aletoriedad es de : " << limit << endl;
+// The main function to construct MST using Kruskal's
+// algorithm
+void KruskalMST(Graph *graph)
+{
+  int V = graph->V;
+  Edge result[V]; // Tnis will store the resultant MST
+  int e = 0;      // An index variable, used for result[]
+  int i = 0;      // An index variable, used for sorted edges
 
-//   for (;;)
-//   {
-//     ofstream file;
-//     file.open("./coordenadas.txt", ios::trunc);
-//     account = 0;
-//     for (size_t i = 0; i < V - 1; i++)
-//     {
-//       for (size_t j = i; j < V; j++)
-//       {
-//         if (i != j)
-//         {
-//           if (!matriz[i][j] && rand() % 2 == 1)
-//           {
-//             matriz[i][j] = 1;
-//             matriz[j][i] = 1;
-//             account++;
-//             file << i << " " << j << endl;
-//             // Almacenamos las variables en un archivo
-//             cout << account << endl;
-//           }
-//         }
-//       }
-//     };
-//     file.close();
+  // Step 1: Sort all the edges in non-decreasing
+  // order of their weight. If we are not allowed to
+  // change the given graph, we can create a copy of
+  // array of edges
+  qsort(graph->edge, graph->E, sizeof(graph->edge[0]),
+        myComp);
 
-//     if (account == limit)
-//       break;
+  // Allocate memory for creating V ssubsets
+  subset *subsets = new subset[(V * sizeof(subset))];
 
-//     ifstream coord;
-//     coord.open("./matriz.txt");
-//     int i{0}, j{0};
-//     while (!coord.eof())
-//     {
-//       coord >> i >> j;
-//       matriz[i][j] = matriz[j][i] = 0;
-//     };
-//     coord.close();
-//   };
-// }
+  // Create V subsets with single elements
+  for (int v = 0; v < V; ++v)
+  {
+    subsets[v].parent = v;
+    subsets[v].rank = 0;
+  }
 
-// // una estructura representa un subset para encontrar una union
-// class subset
-// {
-// public:
-//   int parent;
-//   int rank;
-// };
+  // Number of edges to be taken is equal to V-1
+  while (e < V - 1 && i < graph->E)
+  {
+    // Step 2: Pick the smallest edge. And increment
+    // the index for next iteration
+    Edge next_edge = graph->edge[i++];
 
-// // Una función de utilidad para encontrar el conjunto de un elemento i (utiliza la técnica de compresión de ruta)
-// int find(subset subsets[], int i)
-// {
-//   // encontrar root y hacer root como padre de i (compresión de ruta)
-//   if (subsets[i].parent != i)
-//     subsets[i].parent = find(subsets, subsets[i].parent);
+    int x = find(subsets, next_edge.src);
+    int y = find(subsets, next_edge.dest);
 
-//   return subsets[i].parent;
-// }
+    // If including this edge does't cause cycle,
+    // include it in result and increment the index
+    // of result for next edge
+    if (x != y)
+    {
+      result[e++] = next_edge;
+      Union(subsets, x, y);
+    }
+    // Else discard the next_edge
+  }
 
-// // Una funcion que hace la union de dos conjuntos de x e y (utiliza la union por rango)
-// void Union(subset subsets[], int x, int y)
-// {
-//   int xroot = find(subsets, x);
-//   int yroot = find(subsets, y);
+  // print the contents of result[] to display the
+  // built MST
+  cout << "Following are the edges in the constructed "
+          "MST\n";
+  int minimumCost = 0;
+  for (i = 0; i < e; ++i)
+  {
+    cout << result[i].src << " -- " << result[i].dest
+         << " == " << result[i].weight << endl;
+    minimumCost = minimumCost + result[i].weight;
+  }
+  // return;
+  cout << "Minimum Cost Spanning Tree: " << minimumCost
+       << endl;
+}
 
-//   // Adjuntar arbol de rango mas pequeño bajo la raíz del arbol de alto rango (union por rango)
-//   if (subsets[xroot].rank < subsets[yroot].rank)
-//     subsets[xroot].parent = yroot;
-//   else if (subsets[xroot].rank > subsets[yroot].rank)
-//     subsets[yroot].parent = xroot;
+// Driver code
+int main()
+{
+  /* Let us create following weighted graph
+			10
+		0--------1
+		| \ |
+	6| 5\ |15
+		| \ |
+		2--------3
+			4 */
+  int V = 4; // Number of vertices in graph
+  int E = 5; // Number of edges in graph
+  Graph *graph = createGraph(V, E);
 
-//   // Si los rangos son los mismos, entonces haga uno como raíz e incremente su rango por uno
-//   else
-//   {
-//     subsets[yroot].parent = xroot;
-//     subsets[xroot].rank++;
-//   }
-// }
+  // add edge 0-1
+  graph->edge[0].src = 0;
+  graph->edge[0].dest = 1;
+  graph->edge[0].weight = 10;
 
-// // Compare dos bordes según sus pesos.
-// // Se utiliza en qsort() para ordenar una matriz de bordes
-// int myComp(const void *a, const void *b)
-// {
-//   Edge *a1 = (Edge *)a;
-//   Edge *b1 = (Edge *)b;
-//   return a1->weight > b1->weight;
-// }
+  // add edge 0-2
+  graph->edge[1].src = 0;
+  graph->edge[1].dest = 2;
+  graph->edge[1].weight = 6;
 
-// // Algoritmo de kruskall
-// void kruskall(Graph &graph)
-// {
-//   int V = graph.V;
-//   Edge result[V];
-//   int e = 0; // Una variable de índice, utilizada para result[]
-//   int i = 0; // Una variable de índice, utilizada para aristas ordenadas
+  // add edge 0-3
+  graph->edge[2].src = 0;
+  graph->edge[2].dest = 3;
+  graph->edge[2].weight = 5;
 
-//   /*
-//   Paso 1: Ordene todos los enlaces en orden no decreciente de su peso. Si no se nos permite cambiar el gráfico dado, podemos crear una copia de la matriz de enlaces
-//   */
-//   qsort(graph.edge, graph.E, sizeof(graph.edge[0]), myComp);
+  // add edge 1-3
+  graph->edge[3].src = 1;
+  graph->edge[3].dest = 3;
+  graph->edge[3].weight = 15;
 
-//   // Crear  un subconjunto
-//   subset *subsets = new subset[(V * sizeof(subset))];
+  // add edge 2-3
+  graph->edge[4].src = 2;
+  graph->edge[4].dest = 3;
+  graph->edge[4].weight = 4;
 
-//   // Crear subconjuntos V con elementos individuales
-//   for (int v = 0; v < V; ++v)
-//   {
-//     subsets[v].parent = v;
-//     subsets[v].rank = 0;
-//   }
+  // Function call
+  KruskalMST(graph);
 
-//   // El numero de aristas es igual a V-1
-//   while (e < V - 1 && i < graph.E)
-//   {
-//     // Paso 2: Elija el borde más pequeño. E incrementar el índice para la siguiente iteración
-//     Edge next_edge = graph.edge[i++];
+  return 0;
+}
 
-//     int x = find(subsets, next_edge.src);
-//     int y = find(subsets, next_edge.dest);
-
-//     /*
-//       Si incluir este borde no causa ciclo, inclinelo en el resultado e incremente el índice de resultado para el siguiente borde
-//      */
-//     if (x != y)
-//     {
-//       result[e++] = next_edge;
-//       Union(subsets, x, y);
-//     }
-//   }
-
-//   cout << "Algoritmo de Kruskall " << endl;
-//   int minimumCost = 0;
-//   ofstream kruskall;
-//   kruskall.open("kruskall.dot");
-//   kruskall << "graph A {" << endl;
-//   for (i = 0; i < e; ++i)
-//   {
-//     kruskall << "\t" << result[i].src << " -- " << result[i].dest << " [label = \"" << result[i].weight << "\" ];" << endl;
-//     cout << result[i].src << " -- " << result[i].dest
-//          << " == " << result[i].weight << endl;
-//     minimumCost = minimumCost + result[i].weight;
-//   }
-//   kruskall << "}";
-//   kruskall.close();
-//   cout << "Costo minimo de el arbol de expasion minimo: " << minimumCost
-//        << endl;
-//   system("dot -Tpng ./kruskall.dot -o kruskall.png");
-// }
+// This code is contributed by rathbhupendra
 
 void readFile(const string location_file)
 {
