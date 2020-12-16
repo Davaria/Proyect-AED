@@ -2,8 +2,7 @@
 
 using namespace std;
 
-// Lo de la clase lista más bien es una implementación de una lista enlazada con iteradores que encontré en geekforgeeks
-
+// Lo de la clase lista más bien es una implementación de una lista enlazada con iteradores
 template <class T>
 class Lista
 {
